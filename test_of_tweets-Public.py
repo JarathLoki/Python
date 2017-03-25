@@ -4,6 +4,7 @@
 import tweepy #https://github.com/tweepy/tweepy
 import requests
 import re
+import time
 
 #Twitter API credentials
 consumer_key = ""
@@ -11,6 +12,16 @@ consumer_secret = ""
 access_key = ""
 access_secret = ""
 
+def file_dl(url):
+	#Using requests on a for loop of all URLS in the array
+	local_filename = str(datetime.now("%a, %d %b %Y %H:%M:%S") + url.split(' -')) #output should be "Sat, 25 Mar 2017 H:M:S -https://blah.com/blah"
+	r = requests.get(url, Stream = True) #Must enable stream for full download
+
+	with open(local_filename, 'wb') as file:
+		for chunk in r.iter_content(chunk_size=1024):
+			if chunk: #always True until file completes
+				file.write(chunk)
+	return local_filename
 
 def get_all_tweets(screen_name):
 	#Twitter only allows access to a users most recent 3240 tweets with this method
@@ -29,6 +40,7 @@ def get_all_tweets(screen_name):
 	#save most recent tweets
 	alltweets.extend(new_tweets)
 	
+	'''
 	#save the id of the oldest tweet less one
 	oldest = alltweets[-1].id - 1
 	
@@ -46,19 +58,22 @@ def get_all_tweets(screen_name):
 		oldest = alltweets[-1].id - 1
 		
 		print "...%s tweets downloaded so far" % (len(alltweets))
-	
+	'''
 	#transform the tweepy tweets into a 2D array that will populate the csv	
-	outtweets = [[tweet.id_str, tweet.created_at, tweet.text.encode("utf-8")] for tweet in alltweets]
+	#outtweets = [[tweet.id_str, tweet.created_at, tweet.text.encode("utf-8")] for tweet in alltweets]
+	collectedtweets = [[tweet.text.encode("utf-8")] for tweet in alltweets]
+	
 	'''START OF MY EDITS'''
-	urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',outtweets)
-	print urls
-	'''
-	#write the csv	
-	with open('%s_tweets.csv' % screen_name, 'wb') as f:
-		writer = csv.writer(f)
-		writer.writerow(["id","created_at","text"])
-		writer.writerows(outtweets)
-	'''
+        #urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(outtweets))
+        urls = [re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-&(-_@.&+])+', str(collectedtweets))]
+        for url in urls:
+        	file_dl(urls)
+        	time.sleep(25)
+        '''use this for visible output of urls''' 
+        #print(urls)
+        #print str(outtweets)
+	
+	
 	pass
 
 
